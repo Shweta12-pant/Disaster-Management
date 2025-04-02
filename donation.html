@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Donation Tracking Dashboard</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        #dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .widget {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+        }
+
+        .widget h2 {
+            margin-top: 0;
+            color: #34495e;
+        }
+
+        #donation-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #donation-table th,
+        #donation-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        #donation-table th {
+            background-color: #f2f2f2;
+        }
+
+        #add-donation-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        #add-donation-form input,
+        #add-donation-form select,
+        #add-donation-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        #add-donation-form input:focus,
+        #add-donation-form select:focus,
+        #add-donation-form textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        #add-donation-form button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #add-donation-form button:hover {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+        }
+
+        /* Chart Styling */
+        .chart-container {
+            width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Conditional Payment Options */
+        #payment-options {
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+    <!-- Add Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Add Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <h1>Donation Tracking Dashboard</h1>
+
+    <div id="dashboard">
+        <!-- Top Row: Total Donations and Graphs -->
+        <div class="widget">
+            <h2>Total Donations</h2>
+            <p id="total-donations">$0</p>
+        </div>
+
+        <div class="widget">
+            <h2>Donation Trends</h2>
+            <div class="chart-container">
+                <canvas id="daily-chart" class="chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="weekly-chart" class="chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="monthly-chart" class="chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Add Donation and Donation History -->
+        <div class="widget">
+            <h2>Add Donation</h2>
+            <form id="add-donation-form">
+                <label for="name">Name:</label>
+                <input type="text" id="name" required>
+                <label for="age">Age:</label>
+                <input type="number" id="age" required>
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" required>
+                <label for="type">Donation Type:</label>
+                <select id="type" onchange="togglePaymentOptions()">
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="online">Online</option>
+                </select>
+                <div id="payment-options">
+                    <label>Payment Method:</label>
+                    <label><input type="radio" name="payment" value="paytm"> Paytm</label>
+                    <label><input type="radio" name="payment" value="bank"> Bank Transfer</label>
+                </div>
+                <button type="submit">Add Donation</button>
+            </form>
+        </div>
+
+        <div class="widget">
+            <h2>Donation History</h2>
+            <table id="donation-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Amount</th>
+                        <th>Type</th>
+                        <th>Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const totalDonationsElement = document.getElementById('total-donations');
+        const donationTable = document.getElementById('donation-table').getElementsByTagName('tbody')[0];
+        const addDonationForm = document.getElementById('add-donation-form');
+        const dailyChartCanvas = document.getElementById('daily-chart').getContext('2d');
+        const weeklyChartCanvas = document.getElementById('weekly-chart').getContext('2d');
+        const monthlyChartCanvas = document.getElementById('monthly-chart').getContext('2d');
+        const paymentOptions = document.getElementById('payment-options');
+
+        let donations = [];
+        let dailyChart, weeklyChart, monthlyChart;
+
+        function togglePaymentOptions() {
+            const type = document.getElementById('type').value;
+            if (type === 'online') {
+                paymentOptions.style.display = 'block';
+            } else {
+                paymentOptions.style.display = 'none';
+            }
+        }
+
+        function updateDashboard() {
+            // Update Total Donations
+            let total = donations.reduce((sum, donation) => sum + donation.amount, 0);
+            totalDonationsElement.textContent = `$${total.toFixed(2)}`;
+
+            // Update Donation History Table
+            donationTable.innerHTML = '';
+            donations.forEach(donation => {
+                const row = donationTable.insertRow();
+                row.insertCell().textContent = donation.date;
+                row.insertCell().textContent = donation.name;
+                row.insertCell().textContent = donation.age;
+                row.insertCell().textContent = `$${donation.amount.toFixed(2)}`;
+                row.insertCell().textContent = donation.type;
+                row.insertCell().textContent = donation.paymentMethod || '-';
+            });
+
+            // Update Charts
+            const dailyData = getDailyDonations();
+            const weeklyData = getWeeklyDonations();
+            const monthlyData = getMonthlyDonations();
+
+            if (dailyChart) dailyChart.destroy();
+            if (weeklyChart) weeklyChart.destroy();
+            if (monthlyChart) monthlyChart.destroy();
+
+            dailyChart = new Chart(dailyChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: dailyData.labels,
+                    datasets: [{
+                        label: 'Donations per Day',
+                        data: dailyData.amounts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day'
+                            }
+                        }
+                    }
+                }
+            });
+
+            weeklyChart = new Chart(weeklyChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: weeklyData.labels,
+                    datasets: [{
+                        label: 'Donations per Week',
+                        data: weeklyData.amounts,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Week'
+                            }
+                        }
+                    }
+                }
+            });
+
+            monthlyChart = new Chart(monthlyChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.labels,
+                    datasets: [{
+                        label: 'Donations per Month',
+                        data: monthlyData.amounts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getDailyDonations() {
+            const dailyData = {};
+            donations.forEach(donation => {
+                const date = new Date(donation.date).toLocaleDateString();
+                dailyData[date] = (dailyData[date] || 0) + donation.amount;
+            });
+            return {
+                labels: Object.keys(dailyData),
+                amounts: Object.values(dailyData)
+            };
+        }
+
+        function getWeeklyDonations() {
+            const weeklyData = {};
+            donations.forEach(donation => {
+                const date = new Date(donation.date);
+                const week = `Week ${Math.ceil(date.getDate() / 7)}`;
+                weeklyData[week] = (weeklyData[week] || 0) + donation.amount;
+            });
+            return {
+                labels: Object.keys(weeklyData),
+                amounts: Object.values(weeklyData)
+            };
+        }
+
+        function getMonthlyDonations() {
+            const monthlyData = {};
+            donations.forEach(donation => {
+                const date = new Date(donation.date);
+                const month = date.toLocaleString('default', { month: 'long' });
+                monthlyData[month] = (monthlyData[month] || 0) + donation.amount;
+            });
+            return {
+                labels: Object.keys(monthlyData),
+                amounts: Object.values(monthlyData)
+            };
+        }
+
+        addDonationForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const age = parseInt(document.getElementById('age').value);
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const paymentMethod = type === 'online' ? document.querySelector('input[name="payment"]:checked')?.value : null;
+
+            if (name && age > 0 && amount > 0) {
+                donations.push({
+                    date: new Date().toLocaleDateString(),
+                    name: name,
+                    age: age,
+                    amount: amount,
+                    type: type,
+                    paymentMethod: paymentMethod
+                });
+                addDonationForm.reset();
+                paymentOptions.style.display = 'none';
+                updateDashboard();
+            } else {
+                alert("Please enter valid name, age, and amount.");
+            }
+        });
+
+        updateDashboard();
+
+        document.getElementById('add-donation-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+        
+            const formData = {
+                name: document.getElementById('name').value,
+                age: parseInt(document.getElementById('age').value),
+                amount: parseFloat(document.getElementById('amount').value),
+                type: document.getElementById('type').value,
+                payment_method: document.querySelector('input[name="payment"]:checked')?.value
+            };
+        
+            fetch('/submit-donation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById('add-donation-form').reset();
+                document.getElementById('payment-options').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+
+</body>
+
+</html>

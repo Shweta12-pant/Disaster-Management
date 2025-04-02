@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Request Form</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #e3f2fd; /* Baby blue background */
+            padding: 50px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: auto;
+        }
+        .form-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 25px;
+            background: white;
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            text-align: center;
+            border: 3px solid #0d47a1; /* Dark blue border */
+        }
+        h2 {
+            color: #0d47a1; /* Dark blue heading */
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .logo {
+            width: 100px;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            text-align: left;
+            color: black;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #b0bec5; /* Subtle grey border */
+            border-radius: 6px;
+            background-color: #f0f0f0; /* Light grey input background */
+            font-family: sans-serif;
+            box-sizing: border-box;
+            color: black;
+            font-size: 14px;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #4b4b4b;
+            font-size: 13px;
+        }
+        button {
+            background-color: #1565c0; /* Soft dark blue button */
+            color: white;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: 0.3s ease-in-out;
+        }
+        button:hover {
+            background-color: #0d47a1; /* Darker blue hover effect */
+            transform: scale(1.02);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+            border: 3px solid #0d47a1;
+            z-index: 10;
+        }
+        .modal h3 {
+            color: #0d47a1;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        .modal p {
+            color: black;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            background-color: #0d47a1;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .close-btn:hover {
+            background-color: #0b3d91;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <img src="logo.jpg" alt="Logo" class="logo">
+    <h2>Emergency Request Form</h2>
+    <form id="emergencyForm">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+
+        <label for="phone">Contact Number:</label>
+        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+
+        <label for="location">Current Location:</label>
+        <input type="text" id="location" name="location" placeholder="Enter your location" required>
+
+        <label for="disaster">Type of Disaster:</label>
+        <select id="disaster" name="disaster" required>
+            <option value="Flood">Flood</option>
+            <option value="Earthquake">Earthquake</option>
+            <option value="Cyclone">Cyclone</option>
+            <option value="Wildfire">Wildfire</option>
+            <option value="Landslide">Landslide</option>
+            <option value="Tsunami">Tsunami</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="food">Food Needed (in meals):</label>
+        <input type="number" id="food" name="food" min="0" required>
+
+        <label for="casualties">Casualties (if any):</label>
+        <input type="number" id="casualties" name="casualties" min="0" required>
+
+        <label for="shelter">Type of Shelter Needed:</label>
+        <select id="shelter" name="shelter" required>
+            <option value="Tent">Tent</option>
+            <option value="Temporary Housing">Temporary Housing</option>
+            <option value="Community Shelter">Community Shelter</option>
+        </select>
+
+        <label for="comments">Additional Comments:</label>
+        <textarea id="comments" name="comments" rows="3" placeholder="Enter any additional details"></textarea>
+
+        <button type="submit">Submit Request</button>
+    </form>
+</div>
+
+<!-- Modal Popup -->
+<div id="successModal" class="modal">
+    <h3>Submitted Successfully.</h3>
+    <p>We will reach you out as soon as possible!</p>
+    <button class="close-btn" onclick="closeModal()">OK</button>
+</div>
+
+<script>
+    document.getElementById("emergencyForm").addEventListener("submit", function(event) {
+        event.preventDefault(); // Prevent actual form submission
+
+        // Display the modal
+        document.getElementById("successModal").style.display = "block";
+
+        // Clear the form after submission
+        document.getElementById("emergencyForm").reset();
+    });
+
+    function closeModal() {
+        document.getElementById("successModal").style.display = "none";
+    }
+
+    document.getElementById("emergencyForm").addEventListener("submit", function(event) {
+        event.preventDefault(); // Prevent actual form submission
+    
+        const formData = {
+            name: document.getElementById("name").value,
+            phone: document.getElementById("phone").value,
+            location: document.getElementById("location").value,
+            disaster: document.getElementById("disaster").value,
+            food: parseInt(document.getElementById("food").value),
+            casualties: parseInt(document.getElementById("casualties").value),
+            shelter: document.getElementById("shelter").value,
+            comments: document.getElementById("comments").value
+        };
+    
+        fetch('/submit-emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Display the modal
+            document.getElementById("successModal").style.display = "block";
+            // Clear the form after submission
+            document.getElementById("emergencyForm").reset();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+    
+    function closeModal() {
+        document.getElementById("successModal").style.display = "none";
+    }
+</script>
+
+</body>
+</html>
